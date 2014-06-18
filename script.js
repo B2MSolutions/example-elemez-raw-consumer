@@ -37,7 +37,7 @@ $(function() {
     }).join('');
     $('.js-events-stream').prepend(html);
   }
-
+/*
   function getTotalsForCurrent(current) {
     return _.chain(current)
       .groupBy('type')
@@ -66,6 +66,39 @@ $(function() {
 
     return _.sortBy(_total, 'value');
   }
+*/
+
+  function addToTotals(total, data) {
+    _.each(data, function(item) {
+      var existing = _.find(total, function(t) {
+        return t.key === item.type;
+      });
+
+      if(existing) {
+       existing.value += 1;
+      } else {
+        total.push({ key: item.type, value: 1});
+      }
+    });
+
+    return total;
+  }
+
+  function sortByLargestValue(v) {
+    return -v.value; 
+  }
+
+  function addToList(item) {
+    $('.js-top-elements').append('<li><strong>' + item.key + '</strong> appeared <strong>' + item.value + '</strong> times</li>');
+  }
+
+  function updateTopFive(events) {
+    $('.js-top-elements').html('');
+    _.chain(events)
+      .sortBy(sortByLargestValue)
+      .take(5)
+      .each(addToList);
+  }
 
   function startPolling(token) {
     setInterval(poll, 5000);
@@ -84,12 +117,10 @@ $(function() {
         },
         success: function(data) {
           lastKey = data.lastKey;
-          updateEventsOverTime(data.events)
+          updateEventsOverTime(data.events);
           updateEventsStream(data.events);
-          totalEvents = getTotals(totalEvents, getTotalsForCurrent(data.events));
-          
-          // TODO add to the html
-          _.take(totalEvents, 5);
+          totalEvents = addToTotals(totalEvents, data.events);
+          updateTopFive(totalEvents);        
         }
       });
     }
