@@ -13,19 +13,15 @@ $(function() {
     return zeroPad(date.getDate()) + '/' + zeroPad(date.getMonth() + 1) + '/' + zeroPad(date.getFullYear()) + ' ' + zeroPad(date.getHours()) + ':' + zeroPad(date.getMinutes());
   }
 
-  function updateEventsOverTime(events) {
+  function updateEventsOverTime(events, startedAt) {
     var $el = $('.js-events-over-time'),
-      ratio = (events.length / 5).toFixed();
-    $el.parent().css('width', ratio + '%');
-    $el.html(ratio + ' / 5"');
+      minutesSinceStarted = (new Date().getTime() - startedAt) / (1000 * 60),
+      eventsPerMinute = events.length / minutesSinceStarted;
+    $el.html(eventsPerMinute.toFixed(1));
   }
 
   function updateEventsStream(events) {
     var html = events.map(function(event) {
-      setTimeout(function() {
-        // I should delete items from the page also
-        $('#' + event.key).fadeOut();
-      }, 5000);
       return '<li id="' + event.key + '" class="list-group-item">' +
         '<strong>' + event.key + ' ' + event.scheme + ':' + event.schemeid + '</strong><br />' +
         ' raised on ' + parseDate(event.raised) +
@@ -37,36 +33,6 @@ $(function() {
     }).join('');
     $('.js-events-stream').prepend(html);
   }
-/*
-  function getTotalsForCurrent(current) {
-    return _.chain(current)
-      .groupBy('type')
-      .map(function(value, key) {
-        var result = {};
-        result.key = key;
-        result.value = value.length;
-        return result;
-      })
-      .value();
-  }
-
-  function getTotals(total, current) {
-    var _total = _.clone(total);
-    _.each(current, function(c) {
-      var item = _.find(_total, function(o) { return o.key === c.key; });
-      if(item) {
-        item.value += c.value;
-      } else {
-        _total.push({
-          key: c.key,
-          value: c.value
-        });
-      }
-    });
-
-    return _.sortBy(_total, 'value');
-  }
-*/
 
   function addToTotals(total, data) {
     _.each(data, function(item) {
@@ -74,10 +40,13 @@ $(function() {
         return t.key === item.type;
       });
 
-      if(existing) {
-       existing.value += 1;
+      if (existing) {
+        existing.value += 1;
       } else {
-        total.push({ key: item.type, value: 1});
+        total.push({
+          key: item.type,
+          value: 1
+        });
       }
     });
 
@@ -85,7 +54,7 @@ $(function() {
   }
 
   function sortByLargestValue(v) {
-    return -v.value; 
+    return -v.value;
   }
 
   function addToList(item) {
@@ -101,26 +70,39 @@ $(function() {
   }
 
   function startPolling(token) {
-    setInterval(poll, 5000);
-
     var lastKey;
     var totalEvents = [];
+    var startedAt = new Date().getTime();
+
+    $.ajax({
+      url: 'http://host-003:3000/raw/1/latest',
+      beforeSend: function(xhr) {
+        xhr.setRequestHeader('token', token);
+      },
+      success: function(data) {
+        lastKey = data.lastKey;
+        setInterval(poll, 5000);
+      }
+    });
 
     function poll() {
-      var lastKeyQueryParameter = lastKey ? 'lastkey=' + lastKey : '';
+      var lastKeyQueryParameter = lastKey ? '&lastkey=' + lastKey : '';
       $.ajax({
-        url: 'http://host-003:3000/raw/1?' + lastKeyQueryParameter,
+        url: 'http://host-003:3000/raw/1?sort=asc' + lastKeyQueryParameter,
         beforeSend: function(xhr) {
           xhr.setRequestHeader('token', token);
-          xhr.setRequestHeader('id', 'id');
-          xhr.setRequestHeader('scheme', 'scheme');
         },
         success: function(data) {
-          lastKey = data.lastKey;
-          updateEventsOverTime(data.events);
-          updateEventsStream(data.events);
-          totalEvents = addToTotals(totalEvents, data.events);
-          updateTopFive(totalEvents);        
+          updateEventsOverTime(data.events, startedAt);
+          if (data.events.length > 0) {
+            lastKey = data.lastKey;
+            updateEventsStream(data.events);
+            totalEvents = addToTotals(totalEvents, data.events);
+            updateTopFive(totalEvents);
+          }
+        },
+        error: function() {
+          console.log(JSON.stringify(arguments, null, '  '));
         }
       });
     }
