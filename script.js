@@ -75,7 +75,7 @@ $(function() {
     var startedAt = new Date().getTime();
 
     $.ajax({
-      url: 'http://elemez.com/raw/1/latest',
+      url: 'https://elemez.com/raw/1/latest',
       beforeSend: function(xhr) {
         xhr.setRequestHeader('token', token);
       },
@@ -88,7 +88,7 @@ $(function() {
     function poll() {
       var lastKeyQueryParameter = lastKey ? '&lastkey=' + lastKey : '';
       $.ajax({
-        url: 'http://elemez.com/raw/1?sort=asc' + lastKeyQueryParameter,
+        url: 'https://elemez.com/raw/1?sort=asc' + lastKeyQueryParameter,
         beforeSend: function(xhr) {
           xhr.setRequestHeader('token', token);
         },
