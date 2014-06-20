@@ -77,6 +77,7 @@ $(function() {
 
   function addToList(item) {
     $('.js-top-elements').append('<li><strong>' + item.key + '</strong> appeared <strong>' + item.value + '</strong> times</li>');
+    $(".js-events-stream li:gt(50)").remove();
   }
 
   function updateTotal(events) {
