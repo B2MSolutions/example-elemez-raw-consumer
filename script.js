@@ -34,7 +34,7 @@ $(function() {
   function updateEventsOverTime(events, startedAt) {
     var $el = $('.js-events-over-time'),
       minutesSinceStarted = (new Date().getTime() - startedAt) / 60000,
-      eventsPerMinute = events.length / Math.Min(minutesSinceStarted, 10);
+      eventsPerMinute = events.length / Math.min(minutesSinceStarted, 10);
     $el.html(eventsPerMinute.toFixed(1));
   }
 
