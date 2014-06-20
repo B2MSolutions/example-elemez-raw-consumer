@@ -129,7 +129,7 @@ $(function() {
             updateEventsStream(data.events);
             totalEvents = addToTotals(totalEvents, data.events);
             updateTypesList(totalEvents);
-            updateGraph(data.events.length);
+            updateGraph(data.events);
           }
         },
         error: function() {
@@ -139,8 +139,17 @@ $(function() {
     }
   }
 
-  function updateGraph(n) {
-    var data = { one: n };
+  function updateGraph(events) {
+    var data = {}; 
+    
+    _.each(events, function(event) {
+      if(!data[event.type]) {
+        data[event.type] = 0;
+      }
+
+      data[event.type] += 1;
+    });
+
     graph.series.addData(data);
     graph.render();
   }
@@ -152,8 +161,8 @@ $(function() {
       element: document.getElementById("chart"),
       width: 200,
       height: 100,
-      renderer: 'line',
-      series: new Rickshaw.Series.FixedDuration([{ name: 'one' }], undefined, {
+      renderer: 'area',
+      series: new Rickshaw.Series.FixedDuration([{ name: 'all' }], undefined, {
           timeInterval: tv,
           maxDataPoints: 100,
           timeBase: new Date().getTime() / 1000
