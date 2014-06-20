@@ -1,9 +1,27 @@
 $(function() {
 
+  var token = parseQueryString()["token"];
+  if(token) {
+    $('.js-token-input').val(token);
+  }
+
   $('button').click(function(e) {
     e.preventDefault();
     startPolling($('.js-token-input').val());
   });
+
+  function parseQueryString() {
+    return window.location
+            .search
+            .substring(1)
+            .split("&")
+            .map(function(s) { 
+              return s.split("=") 
+            })
+            .reduce(function(p, s) { 
+              return p[s[0]] = s[1], p 
+            }, {});
+  }
 
   function parseDate(ms) {
     function zeroPad(o) {
@@ -15,8 +33,8 @@ $(function() {
 
   function updateEventsOverTime(events, startedAt) {
     var $el = $('.js-events-over-time'),
-      minutesSinceStarted = (new Date().getTime() - startedAt) / (1000 * 60),
-      eventsPerMinute = events.length / minutesSinceStarted;
+      minutesSinceStarted = (new Date().getTime() - startedAt) / 60000,
+      eventsPerMinute = events.length / Math.Min(minutesSinceStarted, 10);
     $el.html(eventsPerMinute.toFixed(1));
   }
 
