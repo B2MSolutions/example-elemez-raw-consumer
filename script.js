@@ -79,11 +79,16 @@ $(function() {
     $('.js-top-elements').append('<li><strong>' + item.key + '</strong> appeared <strong>' + item.value + '</strong> times</li>');
   }
 
-  function updateTopFive(events) {
+  function updateTotal(events) {
+    var el = $('.js-events-total')
+    var current = parseInt(el.html(), 10) || 0;
+    el.html(current + events.length);
+  }
+
+  function updateTypesList(events) {
     $('.js-top-elements').html('');
     _.chain(events)
       .sortBy(sortByLargestValue)
-      .take(5)
       .each(addToList);
   }
 
@@ -115,8 +120,9 @@ $(function() {
           if (data.events.length > 0) {
             lastKey = data.lastKey;
             updateEventsStream(data.events);
+            updateTotal(data.events);
             totalEvents = addToTotals(totalEvents, data.events);
-            updateTopFive(totalEvents);
+            updateTypesList(totalEvents);
           }
         },
         error: function() {
