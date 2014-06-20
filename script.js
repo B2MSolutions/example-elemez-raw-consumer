@@ -1,5 +1,7 @@
 $(function() {
 
+  var totalNumberOfEvents = 0;
+  
   var token = parseQueryString()["token"];
   if(token) {
     $('.js-token-input').val(token);
@@ -31,10 +33,10 @@ $(function() {
     return zeroPad(date.getDate()) + '/' + zeroPad(date.getMonth() + 1) + '/' + zeroPad(date.getFullYear()) + ' ' + zeroPad(date.getHours()) + ':' + zeroPad(date.getMinutes());
   }
 
-  function updateEventsOverTime(events, startedAt) {
+  function updateEventsOverTime(total, startedAt) {
     var $el = $('.js-events-over-time'),
       minutesSinceStarted = (new Date().getTime() - startedAt) / 60000,
-      eventsPerMinute = events.length / Math.min(minutesSinceStarted, 10);
+      eventsPerMinute = total / Math.min(minutesSinceStarted, 10);
     $el.html(eventsPerMinute.toFixed(1));
   }
 
@@ -81,9 +83,9 @@ $(function() {
   }
 
   function updateTotal(events) {
+    totalNumberOfEvents += events.length;
     var el = $('.js-events-total')
-    var current = parseInt(el.html(), 10) || 0;
-    el.html(current + events.length);
+    el.html(totalNumberOfEvents);
   }
 
   function updateTypesList(events) {
@@ -105,23 +107,23 @@ $(function() {
       },
       success: function(data) {
         lastKey = data.lastKey;
-        setInterval(poll, 5000);
+        setInterval(poll, 1000);
       }
     });
 
     function poll() {
       var lastKeyQueryParameter = lastKey ? '&lastkey=' + lastKey : '';
       $.ajax({
-        url: 'https://elemez.com/raw/1?sort=asc' + lastKeyQueryParameter,
+        url: 'https://elemez.com/raw/1?sort=asc&limit=1000' + lastKeyQueryParameter,
         beforeSend: function(xhr) {
           xhr.setRequestHeader('token', token);
         },
         success: function(data) {
-          updateEventsOverTime(data.events, startedAt);
+          updateTotal(data.events);
+          updateEventsOverTime(totalNumberOfEvents, startedAt);
           if (data.events.length > 0) {
             lastKey = data.lastKey;
             updateEventsStream(data.events);
-            updateTotal(data.events);
             totalEvents = addToTotals(totalEvents, data.events);
             updateTypesList(totalEvents);
           }
