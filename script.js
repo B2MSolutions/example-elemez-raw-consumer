@@ -1,11 +1,14 @@
 $(function() {
 
+  var graph;
   var totalNumberOfEvents = 0;
-  
+
   var token = parseQueryString()["token"];
-  if(token) {
+  if (token) {
     $('.js-token-input').val(token);
   }
+
+  createGraph();
 
   $('button').click(function(e) {
     e.preventDefault();
@@ -14,15 +17,15 @@ $(function() {
 
   function parseQueryString() {
     return window.location
-            .search
-            .substring(1)
-            .split("&")
-            .map(function(s) { 
-              return s.split("=") 
-            })
-            .reduce(function(p, s) { 
-              return p[s[0]] = s[1], p 
-            }, {});
+      .search
+      .substring(1)
+      .split("&")
+      .map(function(s) {
+        return s.split("=")
+      })
+      .reduce(function(p, s) {
+        return p[s[0]] = s[1], p
+      }, {});
   }
 
   function parseDate(ms) {
@@ -126,6 +129,7 @@ $(function() {
             updateEventsStream(data.events);
             totalEvents = addToTotals(totalEvents, data.events);
             updateTypesList(totalEvents);
+            updateGraph(data.events.length);
           }
         },
         error: function() {
@@ -133,5 +137,29 @@ $(function() {
         }
       });
     }
+  }
+
+  function updateGraph(n) {
+    var data = { one: n };
+    graph.series.addData(data);
+    graph.render();
+  }
+
+  function createGraph() {
+    var tv = 1000;
+
+    graph = new Rickshaw.Graph( {
+      element: document.getElementById("chart"),
+      width: 200,
+      height: 100,
+      renderer: 'line',
+      series: new Rickshaw.Series.FixedDuration([{ name: 'one' }], undefined, {
+          timeInterval: tv,
+          maxDataPoints: 100,
+          timeBase: new Date().getTime() / 1000
+        }) 
+    } );
+
+    graph.render();
   }
 });
